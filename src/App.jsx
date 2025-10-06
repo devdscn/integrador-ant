@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 // 1. Lazy Loading para as páginas
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 
 const { Content } = Layout;
 
@@ -46,7 +47,14 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-
+                <Route
+                    path="/profile"
+                    element={
+                        <ProtectedRoute>
+                            <ProfilePage />
+                        </ProtectedRoute>
+                    }
+                />
                 {/* Rota Catch-all (pode ser uma página 404 lazy-loaded) */}
                 <Route
                     path="*"
