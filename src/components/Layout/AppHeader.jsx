@@ -1,15 +1,16 @@
-// src/components/Layout/AppHeader.jsx
+// src/components/Layout/AppHeader.jsx (Ajuste de Alinhamento)
 
 import React from 'react';
 import {
     Layout,
     Dropdown,
-    Menu,
     Space,
     Switch,
     Button,
     theme,
     Grid,
+    Spin,
+    Typography,
 } from 'antd';
 import {
     UserOutlined,
@@ -22,29 +23,26 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../AuthProvider';
 import { useNavigate } from 'react-router-dom';
+import { useProfile } from '../../hooks/useProfile';
 
 const { Header } = Layout;
 const { useBreakpoint } = Grid;
 const { useToken } = theme;
 
 const AppHeader = ({ collapsed, toggleCollapsed }) => {
-    const { logout, currentTheme, toggleTheme, user } = useAuth();
+    const { logout, currentTheme, toggleTheme } = useAuth();
     const navigate = useNavigate();
     const screens = useBreakpoint();
     const { token } = useToken();
 
+    const { data: profile, isLoading: isProfileLoading } = useProfile();
     const isDark = currentTheme === 'dark';
 
-    // FUNÇÃO CRÍTICA DE LOGOUT
     const handleLogout = async () => {
-        // 1. AGUARDA a função logout do AuthProvider (limpeza do token no Supabase e estado local)
         await logout();
-
-        // 2. FORÇA o redirecionamento SÓ DEPOIS que a limpeza for confirmada
         navigate('/login', { replace: true });
     };
 
-    // Menu do Dropdown de Usuário
     const userMenuItems = [
         {
             key: 'profile',
@@ -52,19 +50,49 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
             label: 'Meu Perfil',
             onClick: () => navigate('/profile'),
         },
-        {
-            type: 'divider',
-        },
+        { type: 'divider' },
         {
             key: 'logout',
             icon: <LogoutOutlined />,
             label: 'Sair',
             danger: true,
-            onClick: handleLogout, // Chama a função assíncrona
+            onClick: handleLogout,
         },
     ];
 
-    const userLabel = user?.nome || user?.email || 'Usuário';
+    // Define o Label do Usuário
+    let userLabelContent;
+
+    if (isProfileLoading) {
+        userLabelContent = <Spin size="small" />;
+    } else if (profile) {
+        const displayName = profile.nome || profile.apelido;
+        const displayRole = profile.role ? profile.role.toUpperCase() : 'N/A';
+
+        // 1. ALTERAÇÃO PRINCIPAL: Alinha o texto à esquerda (flex-start)
+        userLabelContent = (
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start', // Alinha as duas linhas de texto à esquerda
+                    lineHeight: 1.2,
+                }}
+            >
+                <Typography.Text strong style={{ fontSize: '14px' }}>
+                    {displayName}
+                </Typography.Text>
+                <Typography.Text
+                    type="secondary"
+                    style={{ fontSize: '11px', marginTop: -2 }}
+                >
+                    {displayRole}
+                </Typography.Text>
+            </div>
+        );
+    } else {
+        userLabelContent = 'Completar Perfil';
+    }
 
     return (
         <Header
@@ -79,7 +107,6 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
             }}
         >
             <Space size="large">
-                {/* Botão de colapsar menu */}
                 {(screens.xs || screens.sm || screens.md) && (
                     <Button
                         type="text"
@@ -91,14 +118,9 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
                             )
                         }
                         onClick={toggleCollapsed}
-                        style={{
-                            fontSize: '16px',
-                            width: 64,
-                            height: 64,
-                        }}
+                        style={{ fontSize: '16px', width: 64, height: 64 }}
                     />
                 )}
-
                 <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
                     Integrador MDE
                 </div>
@@ -117,9 +139,10 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
                 {/* Dropdown de Usuário */}
                 <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>
                     <a onClick={(e) => e.preventDefault()}>
-                        <Space>
-                            <UserOutlined />
-                            {userLabel}
+                        {/* 2. ALTERAÇÃO PRINCIPAL: Alinha verticalmente no centro */}
+                        <Space size={8} align="center">
+                            <UserOutlined style={{ fontSize: '18px' }} />
+                            {userLabelContent}
                         </Space>
                     </a>
                 </Dropdown>
