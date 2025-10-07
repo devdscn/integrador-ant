@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase';
 
 // Nome da chave de cache
-const USERS_KEY = 'admin_profiles';
+const USERS_KEY = 'profiles';
 
 // =========================================================================
 // QUERY: Chamar a função get_admin_profiles()
@@ -29,6 +29,6 @@ export const useUsers = () => {
     return useQuery({
         queryKey: [USERS_KEY],
         queryFn: fetchUsers,
-        staleTime: 1000 * 60 * 5, // A lista de usuários pode ser mantida em cache por 5 minutos
+        staleTime: 0,
     });
 };

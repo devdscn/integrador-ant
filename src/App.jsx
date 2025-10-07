@@ -16,19 +16,36 @@ const UsersPage = lazy(() => import('./pages/UsersPage'));
 const { Content } = Layout;
 
 // ... Componente AppLoadingFallback (mantém o mesmo código)
+// const AppLoadingFallback = () => (
+//     <Layout
+//         style={{
+//             minHeight: '100vh',
+//             display: 'flex',
+//             justifyContent: 'center',
+//             alignItems: 'center',
+//         }}
+//     >
+//         <Content>
+//             <Spin size="large" tip="Carregando aplicativo..." />
+//         </Content>
+//     </Layout>
+// );
 const AppLoadingFallback = () => (
-    <Layout
+    <div
         style={{
-            minHeight: '100vh',
             display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
+            justifyContent: 'center', // Centraliza horizontalmente
+            alignItems: 'center', // Centraliza verticalmente
+            height: '100vh', // Ocupa a altura total da viewport
+            width: '100%',
+            backgroundColor: 'white', // Pode adicionar a cor de fundo desejada
         }}
     >
-        <Content>
-            <Spin size="large" tip="Carregando aplicativo..." />
-        </Content>
-    </Layout>
+        <Spin
+            tip="Carregando aplicação..."
+            size="large" // Mantido o tamanho grande para visibilidade
+        />
+    </div>
 );
 
 function App() {

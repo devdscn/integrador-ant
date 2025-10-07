@@ -104,17 +104,35 @@ const UsersPage = () => {
     // ====================================================================
     // 4. Renderização com Estados
     // ====================================================================
+    // if (isLoading) {
+    //     return (
+    //         <Spin
+    //             tip="Carregando lista de usuários..."
+    //             size="large"
+    //             style={{
+    //                 display: 'block',
+    //                 margin: '50px 0',
+    //                 textAlign: 'center',
+    //             }}
+    //         />
+    //     );
+    // }
     if (isLoading) {
+        // Usa um contêiner flex para centralizar perfeitamente
         return (
-            <Spin
-                tip="Carregando lista de usuários..."
-                size="large"
+            <div
                 style={{
-                    display: 'block',
-                    margin: '50px 0',
-                    textAlign: 'center',
+                    display: 'flex',
+                    justifyContent: 'center', // Centraliza horizontalmente
+                    alignItems: 'center', // Centraliza verticalmente
+                    minHeight: '80vh', // Garante que ocupe a altura da área de conteúdo
                 }}
-            />
+            >
+                <Spin
+                    tip="Carregando lista de usuários..."
+                    size="large" // Define o tamanho como GRANDE
+                />
+            </div>
         );
     }
 
