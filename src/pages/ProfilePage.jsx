@@ -2,104 +2,159 @@
 
 import React, { useEffect } from 'react';
 import {
-    Card,
     Form,
     Input,
     Button,
+    Card,
     Typography,
+    Space,
+    Spin,
+    Alert,
     Row,
     Col,
-    Layout,
-    Spin,
 } from 'antd';
-// import AppLayout is REMOVED
+import {
+    UserOutlined,
+    MailOutlined,
+    PhoneOutlined,
+    SafetyOutlined,
+    HomeOutlined,
+    GlobalOutlined,
+    IdcardOutlined,
+    EnvironmentOutlined,
+} from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { useProfile, useUpdateProfile } from '../hooks/useProfile';
 import { useNotificationAPI } from '../components/NotificationProvider';
 
-const { Title } = Typography;
-const { Content } = Layout; // Mantido para uso nos estados de loading/erro
+const { Title, Text } = Typography;
 
 const ProfilePage = () => {
     const [form] = Form.useForm();
-    // Hooks do React Query para buscar e atualizar o perfil
-    const { data: profile, isLoading, isError, error } = useProfile();
-    const { mutate, isPending: isSaving } = useUpdateProfile();
+    const navigate = useNavigate();
     const notificationApi = useNotificationAPI();
 
-    // Sincroniza os dados do perfil com o formulário quando a query retorna
+    // Hooks de Dados e Mutação
+    const { data: profile, isLoading, isError, error } = useProfile();
+    const {
+        mutate: updateProfile,
+        isPending: isSaving,
+        isError: isSaveError,
+        error: saveError,
+    } = useUpdateProfile();
+
+    // Carrega os dados no formulário
     useEffect(() => {
         if (profile) {
             form.setFieldsValue(profile);
         }
     }, [profile, form]);
 
-    // Função de submissão do formulário (chama a mutação)
+    // Lógica de Submissão
     const onFinish = (values) => {
-        mutate(values, {
+        const payload = {
+            id: profile.id,
+            ...values,
+        };
+
+        updateProfile(payload, {
             onSuccess: () => {
                 notificationApi.success({
-                    message: 'Sucesso!',
-                    description: 'Seu perfil foi atualizado com sucesso.',
-                });
-            },
-            onError: (err) => {
-                notificationApi.error({
-                    message: 'Erro ao Salvar',
-                    description:
-                        err.message || 'Não foi possível atualizar o perfil.',
+                    message: 'Perfil Atualizado',
+                    description: 'Seu perfil foi salvo com sucesso.',
                 });
             },
         });
     };
 
-    // ====================================================================
-    // 1. Estados de Loading/Erro (Renderização sem o Layout completo)
-    // Isso garante que o usuário veja o status mesmo que o LayoutRoute ainda não tenha carregado
-    // ====================================================================
+    // Função para voltar ao Dashboard (ação do botão "Cancelar")
+    const handleCancel = () => {
+        navigate('/');
+    };
+
     if (isLoading) {
         return (
-            <Layout
+            <div
                 style={{
-                    minHeight: '100vh',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
+                    minHeight: '80vh',
                 }}
             >
-                <Content>
-                    <Spin size="large" tip="Carregando dados do perfil..." />
-                </Content>
-            </Layout>
+                <Spin tip="Carregando seu perfil..." size="large" />
+            </div>
         );
     }
 
     if (isError) {
         return (
-            <Title
-                level={3}
-                type="danger"
-                style={{ textAlign: 'center', marginTop: 50 }}
-            >
-                Erro ao carregar o perfil: {error.message}
-            </Title>
+            <Alert
+                message="Erro ao Carregar Perfil"
+                description={`Não foi possível buscar os dados do seu perfil. Detalhes: ${error.message}`}
+                type="error"
+                showIcon
+            />
         );
     }
 
-    // ====================================================================
-    // 2. Conteúdo da Página (Injetado no AppLayout via <Outlet />)
-    // ====================================================================
+    const userEmail = profile?.email || 'N/A';
+    const userRole = (profile?.role || 'user').toUpperCase();
+
     return (
         <>
-            <Title level={2}>Meu Perfil</Title>
-            <Card title="Informações Pessoais">
+            {/* TÍTULO DA PÁGINA */}
+            <Title level={2} style={{ marginBottom: 24 }}>
+                Meu Perfil
+            </Title>
+
+            <Card>
+                {/* INFORMAÇÕES DA CONTA (E-mail e Nível - Somente Leitura) */}
+                <Row gutter={16} style={{ marginBottom: 24 }}>
+                    <Col xs={24} md={12}>
+                        <Form.Item label={<Text strong>E-mail</Text>}>
+                            <Input
+                                prefix={<MailOutlined />}
+                                value={userEmail}
+                                disabled
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <Form.Item label={<Text strong>Nível de Acesso</Text>}>
+                            <Input
+                                prefix={<SafetyOutlined />}
+                                value={userRole}
+                                disabled
+                            />
+                        </Form.Item>
+                    </Col>
+                </Row>
+
+                {/* Alerta de Erro de Salvar */}
+                {isSaveError && (
+                    <Alert
+                        message="Erro ao Salvar"
+                        description={
+                            saveError?.message ||
+                            'Ocorreu um erro ao tentar salvar as alterações.'
+                        }
+                        type="error"
+                        showIcon
+                        closable
+                        style={{ marginBottom: 16 }}
+                    />
+                )}
+
                 <Form
                     form={form}
-                    onFinish={onFinish}
                     layout="vertical"
+                    onFinish={onFinish}
                     initialValues={profile}
                 >
-                    <Row gutter={24}>
-                        {/* Nome e Apelido */}
+                    {/* LINHA 1: Nome e Apelido */}
+                    <Row gutter={16}>
+                        {/* Nome Completo (Obrigatório) */}
                         <Col xs={24} md={12}>
                             <Form.Item
                                 name="nome"
@@ -107,80 +162,158 @@ const ProfilePage = () => {
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Nome é obrigatório',
+                                        message: 'Campo obrigatório',
                                     },
                                 ]}
                             >
-                                <Input />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item
-                                name="apelido"
-                                label="Apelido/Nome de Usuário"
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: 'Apelido é obrigatório',
-                                    },
-                                ]}
-                            >
-                                <Input />
+                                <Input
+                                    prefix={<UserOutlined />}
+                                    placeholder="Nome completo"
+                                />
                             </Form.Item>
                         </Col>
 
-                        {/* Telefone e CPF */}
+                        {/* Apelido (Obrigatório) */}
                         <Col xs={24} md={12}>
+                            <Form.Item
+                                name="apelido"
+                                label="Apelido/Nome Curto"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Campo obrigatório',
+                                    },
+                                ]}
+                            >
+                                <Input
+                                    prefix={<UserOutlined />}
+                                    placeholder="Apelido"
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {/* LINHA 2 (NOVA): Telefone, CPF e CNH - 3 CAMPOS EM UMA LINHA */}
+                    <Row gutter={16}>
+                        {/* Telefone (Obrigatório) - 8 COLUNAS */}
+                        <Col xs={24} md={8}>
                             <Form.Item
                                 name="telefone"
                                 label="Telefone"
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Telefone é obrigatório',
+                                        message: 'Campo obrigatório',
                                     },
                                 ]}
                             >
-                                <Input />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <Form.Item name="cpf" label="CPF">
-                                {/* O CPF fica desabilitado se já estiver preenchido, seguindo a lógica de dados */}
-                                <Input disabled={!!profile?.cpf} />
+                                <Input
+                                    prefix={<PhoneOutlined />}
+                                    placeholder="(xx) xxxxx-xxxx"
+                                />
                             </Form.Item>
                         </Col>
 
-                        {/* ENDEREÇO */}
-                        <Col xs={24} md={18}>
-                            <Form.Item name="endereco" label="Endereço">
-                                <Input />
+                        {/* CPF (Opcional) - 8 COLUNAS */}
+                        <Col xs={24} md={8}>
+                            <Form.Item name="cpf" label="CPF">
+                                <Input
+                                    prefix={<IdcardOutlined />}
+                                    placeholder="000.000.000-00"
+                                />
                             </Form.Item>
                         </Col>
-                        <Col xs={24} md={6}>
+
+                        {/* CNH (Opcional) - 8 COLUNAS */}
+                        <Col xs={24} md={8}>
+                            <Form.Item name="cnh" label="CNH">
+                                <Input
+                                    prefix={<IdcardOutlined />}
+                                    placeholder="Número da CNH"
+                                />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {/* LINHA 3: Endereço e Número */}
+                    <Row gutter={16}>
+                        {/* Endereco (AGORA NÃO OBRIGATÓRIO) */}
+                        <Col xs={24} md={16}>
+                            <Form.Item name="endereco" label="Endereço">
+                                <Input
+                                    prefix={<HomeOutlined />}
+                                    placeholder="Rua, Avenida, etc."
+                                />
+                            </Form.Item>
+                        </Col>
+
+                        {/* Numero (Opcional) */}
+                        <Col xs={24} md={8}>
                             <Form.Item name="numero" label="Número">
-                                <Input />
+                                <Input placeholder="123" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {/* LINHA 4: Bairro e CEP */}
+                    <Row gutter={16}>
+                        {/* Bairro (Opcional) */}
+                        <Col xs={24} md={12}>
+                            <Form.Item name="bairro" label="Bairro">
+                                <Input
+                                    prefix={<EnvironmentOutlined />}
+                                    placeholder="Bairro"
+                                />
+                            </Form.Item>
+                        </Col>
+
+                        {/* CEP (Opcional) */}
+                        <Col xs={24} md={12}>
+                            <Form.Item name="cep" label="CEP">
+                                <Input placeholder="00000-000" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    {/* LINHA 5: Cidade e UF */}
+                    <Row gutter={16}>
+                        {/* Cidade (Opcional) */}
+                        <Col xs={24} md={12}>
+                            <Form.Item name="cidade" label="Cidade">
+                                <Input
+                                    prefix={<GlobalOutlined />}
+                                    placeholder="Cidade"
+                                />
+                            </Form.Item>
+                        </Col>
+
+                        {/* UF (Opcional) */}
+                        <Col xs={24} md={12}>
+                            <Form.Item name="uf" label="UF">
+                                <Input
+                                    placeholder="SP, RJ, BA..."
+                                    maxLength={2}
+                                />
                             </Form.Item>
                         </Col>
                     </Row>
 
                     <Form.Item style={{ marginTop: 24 }}>
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            loading={isSaving}
-                        >
-                            {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-                        </Button>
+                        <Space>
+                            <Button type="default" onClick={handleCancel}>
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={isSaving}
+                            >
+                                Salvar
+                            </Button>
+                        </Space>
                     </Form.Item>
                 </Form>
             </Card>
-            <Typography.Text
-                type="secondary"
-                style={{ display: 'block', marginTop: 16 }}
-            >
-                Seu Nível de Acesso: {profile?.role}
-            </Typography.Text>
         </>
     );
 };
