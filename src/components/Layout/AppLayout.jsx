@@ -1,4 +1,4 @@
-// src/components/Layout/AppLayout.jsx
+// src/components/Layout/AppLayout.jsx (CRITICAMENTE CORRIGIDO)
 
 import React, { useState } from 'react';
 import { Layout, theme, Grid, Spin } from 'antd';
@@ -9,33 +9,29 @@ import AppFooter from './AppFooter';
 const { Content } = Layout;
 const { useBreakpoint } = Grid;
 
-/**
- * Componente Wrapper que define a estrutura visual principal da aplicação.
- * Recebe o conteúdo da página específica como 'children'.
- */
 const AppLayout = ({ children }) => {
     const screens = useBreakpoint();
     const {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
 
-    // Controla o estado de colapso do menu lateral, inicia colapsado em telas pequenas
     const [collapsed, setCollapsed] = useState(screens.lg ? false : true);
 
-    // Função para alternar o colapso
     const toggleCollapsed = () => {
         setCollapsed(!collapsed);
     };
 
-    // Calcula o margin left para empurrar o conteúdo quando o Sider está aberto em telas grandes
-    const contentMarginLeft = screens.lg && !collapsed ? 200 : 0;
+    // CORREÇÃO CRÍTICA AQUI:
+    // 1. Se for tela grande (desktop), a margem deve ser 200px (aberto) ou 80px (recolhido).
+    // 2. Se for tela pequena (mobile), a margem é sempre 0px (o Sider é um overlay).
+    const contentMarginLeft = screens.lg ? (collapsed ? 80 : 200) : 0;
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
             {/* Menu Lateral Responsivo */}
             <AppSider collapsed={collapsed} onCollapse={setCollapsed} />
 
-            {/* Conteúdo Principal + Header/Footer */}
+            {/* 2. Aplica a margem corrigida no Layout principal */}
             <Layout
                 style={{
                     marginLeft: contentMarginLeft,
@@ -48,7 +44,7 @@ const AppLayout = ({ children }) => {
                     toggleCollapsed={toggleCollapsed}
                 />
 
-                {/* Conteúdo Principal (Onde a página ProfilePage será renderizada) */}
+                {/* Conteúdo Principal */}
                 <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
                     <div
                         style={{
@@ -58,7 +54,7 @@ const AppLayout = ({ children }) => {
                             borderRadius: borderRadiusLG,
                         }}
                     >
-                        {children} {/* <--- Renderiza o conteúdo da página */}
+                        {children}
                     </div>
                 </Content>
 

@@ -1,29 +1,56 @@
 // src/components/Layout/AppSider.jsx
 
 import React from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, theme, Grid } from 'antd'; // Adicionado theme e Grid
 import {
     DashboardOutlined,
-    ShoppingCartOutlined,
-    TeamOutlined,
-    MenuOutlined,
+    TeamOutlined, // Ícone para Usuários e o SubMenu Controle
+    SettingOutlined, // Ícone para Meu Perfil
+    // ShoppingCartOutlined e MenuOutlined removidos, pois não estão mais em uso.
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // Adicionado useLocation
 
 const { Sider } = Layout;
+const { useBreakpoint } = Grid; // Adicionado useBreakpoint
 
-// Itens de menu fixos
+// =========================================================================
+// ITENS DO MENU LATERAL
+// =========================================================================
 const menuItems = [
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
-    { key: '/pedidos', icon: <ShoppingCartOutlined />, label: 'Pedidos' },
-    { key: '/clientes', icon: <TeamOutlined />, label: 'Clientes' },
+
+    // NOVO: SubMenu 'Controle'
+    {
+        key: 'controle', // Chave única para o SubMenu
+        icon: <TeamOutlined />,
+        label: 'Controle',
+        children: [
+            {
+                key: '/users', // Item: Usuários
+                icon: <TeamOutlined />,
+                label: 'Usuários',
+            },
+            {
+                key: '/profile', // Item: Meu Perfil
+                icon: <SettingOutlined />,
+                label: 'Meu Perfil',
+            },
+        ],
+    },
 ];
+// =========================================================================
 
 const AppSider = ({ collapsed, onCollapse }) => {
     const navigate = useNavigate();
+    const location = useLocation(); // Fix: Define location
+    const screens = useBreakpoint(); // Fix: Define screens para responsividade
 
     // Calcula a chave selecionada com base na rota atual
     const selectedKeys = [location.pathname];
+    // Define quais submenus devem estar abertos
+    const openKeys = menuItems
+        .filter((item) => item.children)
+        .map((item) => item.key);
 
     return (
         <Sider
@@ -31,17 +58,18 @@ const AppSider = ({ collapsed, onCollapse }) => {
             collapsed={collapsed}
             onCollapse={onCollapse}
             // Configurações para responsividade:
-            breakpoint="lg" // O menu colapsa (fica escondido) em telas "large" (1024px) ou menores
-            collapsedWidth="0" // Ocupa 0px (desaparece) em telas pequenas
+            breakpoint="lg"
+            // 80px em desktop, 0px em mobile
+            collapsedWidth={screens.lg ? 80 : 0}
+            // Lógica de fechamento automático em telas pequenas (mantida do seu arquivo)
             onBreakpoint={(broken) => {
-                // Ao atingir o breakpoint, automaticamente colapsa (fecha)
                 onCollapse(broken);
             }}
             style={{
                 height: '100vh',
                 position: 'fixed',
                 left: 0,
-                zIndex: 100, // Garante que fique por cima do conteúdo
+                zIndex: 100,
             }}
         >
             {/* Logo placeholder */}
@@ -59,8 +87,9 @@ const AppSider = ({ collapsed, onCollapse }) => {
             </div>
 
             <Menu
-                theme="dark"
+                theme="dark" // Mantido tema 'dark' do seu arquivo
                 mode="inline"
+                defaultOpenKeys={openKeys} // Abre o SubMenu 'Controle' por padrão
                 selectedKeys={selectedKeys}
                 items={menuItems}
                 onClick={({ key }) => navigate(key)}

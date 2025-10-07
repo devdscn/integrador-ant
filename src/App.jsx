@@ -11,6 +11,7 @@ import LayoutRoute from './components/Layout/LayoutRoute'; // <--- Importação 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
 
 const { Content } = Layout;
 
@@ -47,16 +48,9 @@ function App() {
                     {/* 3. Rotas Filhas (INDEX e /profile) */}
                     <Route path="/" element={<DashboardPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/users" element={<UsersPage />} />
 
                     {/* Outras rotas protegidas que usam o mesmo Layout */}
-                    <Route
-                        path="/pedidos"
-                        element={<h1>Página Pedidos (Exemplo)</h1>}
-                    />
-                    <Route
-                        path="/clientes"
-                        element={<h1>Página Clientes (Exemplo)</h1>}
-                    />
                 </Route>
 
                 {/* Redireciona qualquer coisa para o login se for desconhecido (para o teste) */}
