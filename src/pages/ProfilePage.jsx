@@ -12,26 +12,28 @@ import {
     Layout,
     Spin,
 } from 'antd';
+// import AppLayout is REMOVED
 import { useProfile, useUpdateProfile } from '../hooks/useProfile';
 import { useNotificationAPI } from '../components/NotificationProvider';
 
 const { Title } = Typography;
-const { Content } = Layout;
+const { Content } = Layout; // Mantido para uso nos estados de loading/erro
 
 const ProfilePage = () => {
     const [form] = Form.useForm();
+    // Hooks do React Query para buscar e atualizar o perfil
     const { data: profile, isLoading, isError, error } = useProfile();
     const { mutate, isPending: isSaving } = useUpdateProfile();
     const notificationApi = useNotificationAPI();
 
-    // 1. Efeito para carregar os dados no formulário assim que a query terminar
+    // Sincroniza os dados do perfil com o formulário quando a query retorna
     useEffect(() => {
         if (profile) {
             form.setFieldsValue(profile);
         }
     }, [profile, form]);
 
-    // 2. Função de submissão do formulário
+    // Função de submissão do formulário (chama a mutação)
     const onFinish = (values) => {
         mutate(values, {
             onSuccess: () => {
@@ -50,7 +52,10 @@ const ProfilePage = () => {
         });
     };
 
-    // 3. Estado de Carregamento
+    // ====================================================================
+    // 1. Estados de Loading/Erro (Renderização sem o Layout completo)
+    // Isso garante que o usuário veja o status mesmo que o LayoutRoute ainda não tenha carregado
+    // ====================================================================
     if (isLoading) {
         return (
             <Layout
@@ -68,34 +73,43 @@ const ProfilePage = () => {
         );
     }
 
-    // 4. Estado de Erro
     if (isError) {
         return (
-            <Title level={3} type="danger">
+            <Title
+                level={3}
+                type="danger"
+                style={{ textAlign: 'center', marginTop: 50 }}
+            >
                 Erro ao carregar o perfil: {error.message}
             </Title>
         );
     }
 
-    // 5. Renderização do Formulário
+    // ====================================================================
+    // 2. Conteúdo da Página (Injetado no AppLayout via <Outlet />)
+    // ====================================================================
     return (
-        <Content style={{ padding: 24, margin: 0 }}>
+        <>
             <Title level={2}>Meu Perfil</Title>
             <Card title="Informações Pessoais">
                 <Form
                     form={form}
                     onFinish={onFinish}
                     layout="vertical"
-                    initialValues={profile} // Usado se houver dados iniciais
+                    initialValues={profile}
                 >
-                    {/* Grid Responsivo: Usa Col para dividir os campos em telas maiores */}
                     <Row gutter={24}>
                         {/* Nome e Apelido */}
                         <Col xs={24} md={12}>
                             <Form.Item
                                 name="nome"
                                 label="Nome Completo"
-                                rules={[{ required: true }]}
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Nome é obrigatório',
+                                    },
+                                ]}
                             >
                                 <Input />
                             </Form.Item>
@@ -104,7 +118,12 @@ const ProfilePage = () => {
                             <Form.Item
                                 name="apelido"
                                 label="Apelido/Nome de Usuário"
-                                rules={[{ required: true }]}
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Apelido é obrigatório',
+                                    },
+                                ]}
                             >
                                 <Input />
                             </Form.Item>
@@ -115,19 +134,24 @@ const ProfilePage = () => {
                             <Form.Item
                                 name="telefone"
                                 label="Telefone"
-                                rules={[{ required: true }]}
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Telefone é obrigatório',
+                                    },
+                                ]}
                             >
                                 <Input />
                             </Form.Item>
                         </Col>
                         <Col xs={24} md={12}>
                             <Form.Item name="cpf" label="CPF">
-                                <Input disabled={!!profile?.cpf} />{' '}
-                                {/* Desabilita se já houver CPF */}
+                                {/* O CPF fica desabilitado se já estiver preenchido, seguindo a lógica de dados */}
+                                <Input disabled={!!profile?.cpf} />
                             </Form.Item>
                         </Col>
 
-                        {/* ENDEREÇO - Linha 3 */}
+                        {/* ENDEREÇO */}
                         <Col xs={24} md={18}>
                             <Form.Item name="endereco" label="Endereço">
                                 <Input />
@@ -151,14 +175,13 @@ const ProfilePage = () => {
                     </Form.Item>
                 </Form>
             </Card>
-            {/* Opcional: Mostrar o role (apenas leitura) */}
             <Typography.Text
                 type="secondary"
                 style={{ display: 'block', marginTop: 16 }}
             >
                 Seu Nível de Acesso: {profile?.role}
             </Typography.Text>
-        </Content>
+        </>
     );
 };
 

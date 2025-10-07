@@ -1,20 +1,20 @@
-// src/App.jsx (Com Lazy Loading e Suspense)
+// src/App.jsx (Com Rotas Aninhadas e Componentes Lazy-Loaded)
 
 import React, { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Spin, Layout } from 'antd'; // Importamos o Spin do Ant Design para o fallback
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Spin, Layout } from 'antd';
 
-// Componentes de Rota Protegida e Auxiliares
 import ProtectedRoute from './components/ProtectedRoute';
+import LayoutRoute from './components/Layout/LayoutRoute'; // <--- Importação do novo layout
 
-// 1. Lazy Loading para as páginas
+// 1. Lazy Loading para as páginas (continuamos usando Lazy Loading)
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 
 const { Content } = Layout;
 
-// Componente para o fallback
+// ... Componente AppLoadingFallback (mantém o mesmo código)
 const AppLoadingFallback = () => (
     <Layout
         style={{
@@ -32,38 +32,35 @@ const AppLoadingFallback = () => (
 
 function App() {
     return (
-        // 2. Envolve as Rotas com Suspense
         <Suspense fallback={<AppLoadingFallback />}>
             <Routes>
-                {/* Rota Pública: Login */}
                 <Route path="/login" element={<LoginPage />} />
 
-                {/* Rotas Protegidas */}
+                {/* 2. Rota Pai Protegida: O AppLayout é carregado AQUI uma vez */}
                 <Route
-                    path="/"
                     element={
                         <ProtectedRoute>
-                            <DashboardPage />
+                            <LayoutRoute />
                         </ProtectedRoute>
                     }
-                />
-                <Route
-                    path="/profile"
-                    element={
-                        <ProtectedRoute>
-                            <ProfilePage />
-                        </ProtectedRoute>
-                    }
-                />
-                {/* Rota Catch-all (pode ser uma página 404 lazy-loaded) */}
-                <Route
-                    path="*"
-                    element={
-                        <h1 style={{ textAlign: 'center', marginTop: '50px' }}>
-                            404 | Página Não Encontrada
-                        </h1>
-                    }
-                />
+                >
+                    {/* 3. Rotas Filhas (INDEX e /profile) */}
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+
+                    {/* Outras rotas protegidas que usam o mesmo Layout */}
+                    <Route
+                        path="/pedidos"
+                        element={<h1>Página Pedidos (Exemplo)</h1>}
+                    />
+                    <Route
+                        path="/clientes"
+                        element={<h1>Página Clientes (Exemplo)</h1>}
+                    />
+                </Route>
+
+                {/* Redireciona qualquer coisa para o login se for desconhecido (para o teste) */}
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </Suspense>
     );

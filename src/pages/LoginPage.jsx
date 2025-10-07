@@ -1,20 +1,17 @@
-// src/pages/LoginPage.jsx (Corrigido para usar o Hook)
-
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, Row, Col, Space } from 'antd';
 import { UserOutlined, LockOutlined, LoadingOutlined } from '@ant-design/icons';
 import { supabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
-// 1. Importa o hook customizado
+// Importação do hook customizado para exibir notificações
 import { useNotificationAPI } from '../components/NotificationProvider';
 
 const { Title } = Typography;
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const notificationApi = useNotificationAPI(); // Inicializa o sistema de notificação
     const [isLoading, setIsLoading] = useState(false);
-    // 2. Chama o hook para obter a API de notificação
-    const notificationApi = useNotificationAPI();
 
     // Função de submissão do formulário
     const onFinish = async (values) => {
@@ -22,29 +19,33 @@ const LoginPage = () => {
         const { email, password } = values;
 
         try {
+            // 1. Chamada de autenticação com o Supabase
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (error) {
-                // 3. Usa o hook para exibir a mensagem de erro do Supabase
+                // 2. TRATAMENTO DE ERRO: Exibir a mensagem de erro do Supabase
                 notificationApi.error({
+                    // Usa o hook para exibir o erro
                     message: 'Erro de Autenticação',
-                    description: error.message,
+                    description: error.message, // Exibe a mensagem do Supabase (ex: Invalid login credentials)
                 });
             } else if (data.session) {
+                // 3. SUCESSO E REDIRECIONAMENTO: Se a sessão for estabelecida
                 notificationApi.success({
+                    // Usa o hook para exibir o sucesso
                     message: 'Login bem-sucedido!',
-                    description: 'Seja bem vindo!',
+                    description: 'Você está sendo redirecionado.',
                     duration: 1.5,
-                    placement: 'bottomRight',
                 });
 
+                // Redirecionamento imediato para o Dashboard
                 navigate('/', { replace: true });
             }
         } catch (error) {
-            // Usa o hook para erros de rede
+            // Erro de rede ou outro erro inesperado
             notificationApi.error({
                 message: 'Erro Inesperado',
                 description:
@@ -80,7 +81,6 @@ const LoginPage = () => {
                         layout="vertical"
                         style={{ marginTop: 20 }}
                     >
-                        {/* Itens do formulário */}
                         <Form.Item
                             name="email"
                             rules={[
