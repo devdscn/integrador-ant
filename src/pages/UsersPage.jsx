@@ -4,7 +4,8 @@
 import React from 'react';
 import { Layout, Typography, Table, Tag, Space, Spin, Alert, Card } from 'antd';
 import { useUsers } from '../hooks/useUsers';
-import AppLayout from '../components/Layout/AppLayout';
+import { Button } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
 
@@ -23,6 +24,7 @@ const getRoleColor = (role) => {
 
 const UsersPage = () => {
     const { data: users, isLoading, isError, error } = useUsers();
+    const navigate = useNavigate();
 
     // 1. Definição das Colunas da Tabela
     const columns = [
@@ -89,33 +91,34 @@ const UsersPage = () => {
             render: (date) => new Date(date).toLocaleDateString('pt-BR'),
             sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at),
         },
+        // {
+        //     title: 'Ações',
+        //     key: 'action',
+        //     width: 100,
+        //     render: (_, record) => (
+        //         <Space size="middle">
+        //             <a>Editar</a>
+        //         </Space>
+        //     ),
+        // },
         {
             title: 'Ações',
-            key: 'action',
-            width: 100,
+            key: 'actions',
+            // O 'render' recebe o valor da célula e o objeto de toda a linha (record)
             render: (_, record) => (
-                <Space size="middle">
-                    <a>Editar</a>
-                </Space>
+                <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => {
+                        navigate(`/users/edit/${record.id}`);
+                    }}
+                >
+                    Editar
+                </Button>
             ),
         },
     ];
 
-    // ====================================================================
-    // 4. Renderização com Estados
-    // ====================================================================
-    // if (isLoading) {
-    //     return (
-    //         <Spin
-    //             tip="Carregando lista de usuários..."
-    //             size="large"
-    //             style={{
-    //                 display: 'block',
-    //                 margin: '50px 0',
-    //                 textAlign: 'center',
-    //             }}
-    //         />
-    //     );
     // }
     if (isLoading) {
         // Usa um contêiner flex para centralizar perfeitamente
