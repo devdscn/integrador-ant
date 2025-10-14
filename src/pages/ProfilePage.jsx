@@ -26,6 +26,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useProfile, useUpdateProfile } from '../hooks/useProfile';
 import { useNotificationAPI } from '../components/NotificationProvider';
+import SpinComponent from '../components/SpinComponent';
 
 const { Title, Text } = Typography;
 
@@ -82,7 +83,8 @@ const ProfilePage = () => {
                     minHeight: '80vh',
                 }}
             >
-                <Spin tip="Carregando seu perfil..." size="large" />
+                {/* <Spin tip="Carregando seu perfil..." size="large" /> */}
+                <SpinComponent />
             </div>
         );
     }

@@ -6,6 +6,7 @@ import { Layout, Typography, Table, Tag, Space, Spin, Alert, Card } from 'antd';
 import { useUsers } from '../hooks/useUsers';
 import { Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import SpinComponent from '../components/SpinComponent';
 
 const { Title } = Typography;
 
@@ -124,17 +125,18 @@ const UsersPage = () => {
         // Usa um contêiner flex para centralizar perfeitamente
         return (
             <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'center', // Centraliza horizontalmente
-                    alignItems: 'center', // Centraliza verticalmente
-                    minHeight: '80vh', // Garante que ocupe a altura da área de conteúdo
-                }}
+            // style={{
+            //     display: 'flex',
+            //     justifyContent: 'center', // Centraliza horizontalmente
+            //     alignItems: 'center', // Centraliza verticalmente
+            //     minHeight: '80vh', // Garante que ocupe a altura da área de conteúdo
+            // }}
             >
-                <Spin
+                {/* <Spin
                     tip="Carregando lista de usuários..."
                     size="large" // Define o tamanho como GRANDE
-                />
+                /> */}
+                <SpinComponent />
             </div>
         );
     }

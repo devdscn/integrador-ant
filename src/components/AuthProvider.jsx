@@ -1,18 +1,13 @@
-// src/components/AuthProvider.jsx
-
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useEffect } from 'react';
 import { theme } from 'antd';
 import { supabase } from '../services/supabase';
-// REMOVIDO: import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    // REMOVIDO: const navigate = useNavigate();
-
     const [isInitializing, setIsInitializing] = useState(true);
     const [user, setUser] = useState(null);
-    const [currentTheme, setCurrentTheme] = useState('light');
+    const [currentTheme, setCurrentTheme] = useState('dark');
 
     const isAuthenticated = !!user;
 
@@ -70,4 +65,5 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

@@ -4,6 +4,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { Spin, Layout } from 'antd'; // Usamos o Spin para mostrar um loading enquanto o estado é verificado
+import SpinComponent from './SpinComponent';
 
 const { Content } = Layout;
 
@@ -18,6 +19,13 @@ const ProtectedRoute = ({ children }) => {
     // checagem da sessão (ex: Supabase lendo tokens do localStorage)
 
     // 2. Mostra um spinner durante a inicialização (checa se o usuário já está logado)
+    const contentStyle = {
+        padding: 200,
+        background: 'rgba(0, 0, 0, 0.05)',
+        borderRadius: 4,
+    };
+    const content = <div style={contentStyle} />;
+
     if (isInitializing) {
         return (
             <Layout
@@ -29,7 +37,12 @@ const ProtectedRoute = ({ children }) => {
                 }}
             >
                 <Content>
-                    <Spin size="large" tip="Carregando sessão..." />
+                    {/* <Spin size="large" tip="Carregando sessão..." /> */}
+
+                    {/* <Spin tip="Carregando" size="large" fullscreen={true}>
+                        {content}
+                    </Spin> */}
+                    <SpinComponent />
                 </Content>
             </Layout>
         );

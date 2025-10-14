@@ -1,9 +1,9 @@
 // src/App.jsx (Com Rotas Aninhadas e Componentes Lazy-Loaded)
 
-import React, { lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Spin, Layout } from 'antd';
-
+import SpinComponent from './components/SpinComponent';
 import ProtectedRoute from './components/ProtectedRoute';
 import LayoutRoute from './components/Layout/LayoutRoute'; // <--- Importação do novo layout
 
@@ -13,38 +13,23 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 
-const { Content } = Layout;
-
-// ... Componente AppLoadingFallback (mantém o mesmo código)
-// const AppLoadingFallback = () => (
-//     <Layout
-//         style={{
-//             minHeight: '100vh',
-//             display: 'flex',
-//             justifyContent: 'center',
-//             alignItems: 'center',
-//         }}
-//     >
-//         <Content>
-//             <Spin size="large" tip="Carregando aplicativo..." />
-//         </Content>
-//     </Layout>
-// );
 const AppLoadingFallback = () => (
     <div
-        style={{
-            display: 'flex',
-            justifyContent: 'center', // Centraliza horizontalmente
-            alignItems: 'center', // Centraliza verticalmente
-            height: '100vh', // Ocupa a altura total da viewport
-            width: '100%',
-            backgroundColor: 'white', // Pode adicionar a cor de fundo desejada
-        }}
+    // style={{
+    //     display: 'flex',
+    //     justifyContent: 'center', // Centraliza horizontalmente
+    //     alignItems: 'center', // Centraliza verticalmente
+    //     height: '100vh', // Ocupa a altura total da viewport
+    //     width: '100%',
+    //     backgroundColor: 'white', // Pode adicionar a cor de fundo desejada
+    // }}
     >
-        <Spin
+        <SpinComponent />
+
+        {/* <Spin
             tip="Carregando aplicação..."
             size="large" // Mantido o tamanho grande para visibilidade
-        />
+        /> */}
     </div>
 );
 
