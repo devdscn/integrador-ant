@@ -52,15 +52,10 @@ const updateProfile = async ({ userId, updates }) => {
     // A RLS garantirá que apenas o próprio usuário possa fazer isso.
     const { data, error } = await supabase
         .from('profiles')
-        .update(updates)
-        .eq('id', userId)
+        .upsert(updates, { onConflict: 'id' })
         .select()
         .single();
-
-    if (error) {
-        throw new Error(error.message || 'Falha ao atualizar o perfil.');
-    }
-
+    if (error) throw error;
     return data;
 };
 
