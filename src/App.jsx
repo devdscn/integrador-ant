@@ -1,11 +1,9 @@
-// src/App.jsx (Com Rotas Aninhadas e Componentes Lazy-Loaded)
-
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Spin, Layout } from 'antd';
 import SpinComponent from './components/SpinComponent';
 import ProtectedRoute from './components/ProtectedRoute';
-import LayoutRoute from './components/Layout/LayoutRoute'; // <--- Importação do novo layout
+import LayoutRoute from './components/Layout/LayoutRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // 1. Lazy Loading para as páginas (continuamos usando Lazy Loading)
@@ -13,25 +11,10 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
-const EditProfilePage = lazy(() => import('./pages/EditProfilePage'));
 
 const AppLoadingFallback = () => (
-    <div
-    // style={{
-    //     display: 'flex',
-    //     justifyContent: 'center', // Centraliza horizontalmente
-    //     alignItems: 'center', // Centraliza verticalmente
-    //     height: '100vh', // Ocupa a altura total da viewport
-    //     width: '100%',
-    //     backgroundColor: 'white', // Pode adicionar a cor de fundo desejada
-    // }}
-    >
+    <div>
         <SpinComponent />
-
-        {/* <Spin
-            tip="Carregando aplicação..."
-            size="large" // Mantido o tamanho grande para visibilidade
-        /> */}
     </div>
 );
 
@@ -54,10 +37,13 @@ function App() {
                         <Route path="/" element={<DashboardPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/users" element={<UsersPage />} />
+                        {/* rota para editar outro usuário (admin) */}
                         <Route
                             path="/users/edit/:id"
-                            element={<EditProfilePage />}
+                            element={<ProfilePage />}
                         />
+                        {/* rota para editar próprio perfil permanece */}
+                        <Route path="/profile/edit" element={<ProfilePage />} />
 
                         {/* Outras rotas protegidas que usam o mesmo Layout */}
                     </Route>

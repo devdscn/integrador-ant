@@ -1,5 +1,3 @@
-// src/hooks/useProfile.js
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../components/AuthProvider';
@@ -8,48 +6,117 @@ import { useAuth } from '../components/AuthProvider';
 const PROFILE_KEY = 'profile';
 
 // =========================================================================
-// 1. QUERY: Buscar o perfil do usuário logado
+// 1. QUERY: Buscar o perfil do usuário (aceita userId opcional)
 // =========================================================================
 
 const fetchProfile = async (userId) => {
-    // 1. Busca o perfil na tabela 'profiles' baseado no ID do usuário logado (userId = auth.uid())
-    const { data, error, status } = await supabase
+    if (!userId) return null;
+
+    // 1) Tenta ler da VIEW pública que contém email (public.profile_with_email)
+    try {
+        const { data, error, status } = await supabase
+            .from('profile_with_email')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error && status !== 406) {
+            throw error;
+        }
+
+        if (data) return data;
+    } catch (err) {
+        // Se falhar, tentamos fallback abaixo
+        // eslint-disable-next-line no-console
+        console.warn(
+            'fetchProfile: query view failed, falling back to separate queries',
+            err?.message
+        );
+    }
+
+    // 2) Fallback: busca profile da tabela public.profiles e email da auth.users separadamente
+    const {
+        data: profileOnly,
+        error: profileErr,
+        status: profileStatus,
+    } = await supabase
         .from('profiles')
         .select(
-            `id, apelido, nome, telefone, role, created_at, 
+            `id, apelido, nome, telefone, role, created_at,
                  endereco, numero, bairro, cidade, uf, cep, cpf, cnh`
         )
         .eq('id', userId)
-        .single(); // Espera um único resultado
+        .single();
 
-    if (error && status !== 406) {
-        // status 406 é quando .single() não encontra (pode ser o caso inicial)
-        throw new Error(error.message || 'Erro ao carregar o perfil.');
+    if (profileErr && profileStatus !== 406) {
+        throw new Error(profileErr.message || 'Erro ao carregar o perfil.');
     }
 
-    // Se o perfil não existir (usuário acabou de se cadastrar), retorna null, não um erro
-    return data;
+    try {
+        const { data: userRow, error: userErr } = await supabase
+            .from('users')
+            .select('email')
+            .eq('id', userId)
+            .single();
+
+        if (!userErr && userRow) {
+            profileOnly.email = userRow.email;
+        }
+    } catch (e) {
+        // não crítico
+        // eslint-disable-next-line no-console
+        console.warn(
+            'fetchProfile: failed to fetch email from users table',
+            e?.message
+        );
+    }
+
+    return profileOnly;
 };
 
-export const useProfile = () => {
-    const { user } = useAuth(); // Obtém o user do AuthProvider
-    const userId = user?.id; // ID do usuário logado
+/*
+  Se preferir usar RPC em vez da view, crie uma função SQL (ex: public.get_profile_with_email(uid uuid))
+  e descomente o trecho abaixo e comente o bloco acima.
+  Exemplo de uso da RPC:
+
+const fetchProfile = async (userId) => {
+    if (!userId) return null;
+    const { data, error } = await supabase.rpc('get_profile_with_email', { uid: userId });
+    if (error) throw error;
+    return data;
+};
+*/
+
+export const useProfile = (userIdParam) => {
+    const { user } = useAuth();
+    const userId = userIdParam || user?.id;
 
     return useQuery({
         queryKey: [PROFILE_KEY, userId],
         queryFn: () => fetchProfile(userId),
-        enabled: !!userId, // Apenas executa a query se houver um userId (usuário logado)
-        staleTime: 1000 * 60, // Perfil não muda com frequência
+        enabled: !!userId,
+        staleTime: 1000 * 60,
     });
 };
 
 // =========================================================================
-// 2. MUTATION: Atualizar o perfil
+// 2. MUTATION: Atualizar o perfil (faz UPDATE quando id existe, senão upsert)
 // =========================================================================
 
-const updateProfile = async ({ userId, updates }) => {
-    // 1. Insere ou Atualiza (upsert) na tabela 'profiles'
-    // A RLS garantirá que apenas o próprio usuário possa fazer isso.
+const updateProfileRequest = async (updates) => {
+    // se updates.id existir => UPDATE por id (evita duplicate key)
+    if (updates?.id) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', updates.id)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
+    // caso não tenha id, usa upsert (onConflict id)
     const { data, error } = await supabase
         .from('profiles')
         .upsert(updates, { onConflict: 'id' })
@@ -65,11 +132,15 @@ export const useUpdateProfile = () => {
     const userId = user?.id;
 
     return useMutation({
-        mutationFn: (updates) => updateProfile({ userId, updates }),
-
-        // No sucesso, invalida a chave de cache do perfil para forçar o refetch e atualizar a UI
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [PROFILE_KEY, userId] });
+        mutationFn: (updates) => updateProfileRequest(updates),
+        onSuccess: (_data, variables) => {
+            const targetId = variables?.id || userId;
+            if (targetId) {
+                queryClient.invalidateQueries({
+                    queryKey: [PROFILE_KEY, targetId],
+                });
+            }
+            queryClient.invalidateQueries({ queryKey: ['users'] });
         },
     });
 };

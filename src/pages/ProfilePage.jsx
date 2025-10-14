@@ -1,5 +1,3 @@
-// src/pages/ProfilePage.jsx
-
 import React, { useEffect } from 'react';
 import {
     Form,
@@ -23,7 +21,7 @@ import {
     IdcardOutlined,
     EnvironmentOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useProfile, useUpdateProfile } from '../hooks/useProfile';
 import { useNotificationAPI } from '../components/NotificationProvider';
 import SpinComponent from '../components/SpinComponent';
@@ -34,9 +32,11 @@ const ProfilePage = () => {
     const [form] = Form.useForm();
     const navigate = useNavigate();
     const notificationApi = useNotificationAPI();
+    const { id } = useParams(); // if id present => editing other user
 
-    // Hooks de Dados e Mutação
-    const { data: profile, isLoading, isError, error } = useProfile();
+    // agora useProfile aceita um id opcional
+    const { data: profile, isLoading, isError, error } = useProfile(id);
+
     const {
         mutate: updateProfile,
         isPending: isSaving,
@@ -44,33 +44,29 @@ const ProfilePage = () => {
         error: saveError,
     } = useUpdateProfile();
 
-    // Carrega os dados no formulário
     useEffect(() => {
-        if (profile) {
-            form.setFieldsValue(profile);
-        }
+        if (profile) form.setFieldsValue(profile);
     }, [profile, form]);
 
-    // Lógica de Submissão
     const onFinish = (values) => {
         const payload = {
-            id: profile.id,
+            id: id || profile?.id,
             ...values,
         };
 
         updateProfile(payload, {
             onSuccess: () => {
                 notificationApi.success({
-                    message: 'Perfil Atualizado',
-                    description: 'Seu perfil foi salvo com sucesso.',
+                    message: id ? 'Usuário Atualizado' : 'Perfil Atualizado',
+                    description: 'As alterações foram salvas com sucesso.',
                 });
+                if (id) navigate('/users');
             },
         });
     };
 
-    // Função para voltar ao Dashboard (ação do botão "Cancelar")
     const handleCancel = () => {
-        navigate('/');
+        navigate(id ? '/users' : '/');
     };
 
     if (isLoading) {
@@ -83,7 +79,6 @@ const ProfilePage = () => {
                     minHeight: '80vh',
                 }}
             >
-                {/* <Spin tip="Carregando seu perfil..." size="large" /> */}
                 <SpinComponent />
             </div>
         );
@@ -93,7 +88,7 @@ const ProfilePage = () => {
         return (
             <Alert
                 message="Erro ao Carregar Perfil"
-                description={`Não foi possível buscar os dados do seu perfil. Detalhes: ${error.message}`}
+                description={`Não foi possível buscar os dados do perfil. Detalhes: ${error?.message}`}
                 type="error"
                 showIcon
             />
@@ -107,7 +102,7 @@ const ProfilePage = () => {
         <>
             {/* TÍTULO DA PÁGINA */}
             <Title level={2} style={{ marginBottom: 24 }}>
-                Meu Perfil
+                {id ? 'Editar Usuário' : 'Meu Perfil'}
             </Title>
 
             <Card>
