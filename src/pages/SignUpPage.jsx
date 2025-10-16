@@ -1,26 +1,17 @@
 import React, { useState } from 'react';
-import {
-    Form,
-    Input,
-    Button,
-    Card,
-    Typography,
-    Alert,
-    Row,
-    Col,
-    Space,
-} from 'antd';
+import { Form, Input, Button, Card, Typography, Alert, Row, Col } from 'antd';
 import {
     MailOutlined,
     LockOutlined,
     GlobalOutlined,
     SolutionOutlined,
+    PhoneOutlined,
     HomeOutlined,
+    EnvironmentOutlined,
     LoadingOutlined,
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-// Importação do hook customizado para exibir notificações (assumindo que existe)
 import { useNotificationAPI } from '../components/NotificationProvider';
 
 const { Title, Text } = Typography;
@@ -29,19 +20,51 @@ const SignUpPage = () => {
     const navigate = useNavigate();
     const notificationApi = useNotificationAPI();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null); // Usado para erros no formulário
+    const [error, setError] = useState(null);
 
-    // Função que será chamada ao submeter o formulário
+    const showRpcError = (message) => {
+        setError(message);
+        notificationApi.error({
+            message: 'Falha na Criação da Organização',
+            description: message,
+            duration: 8,
+        });
+    };
+
+    const showSuccess = (message) => {
+        notificationApi.success({
+            message: 'Cadastro Concluído!',
+            description: message,
+            duration: 5,
+        });
+    };
+
+    // FUNÇÃO PRINCIPAL DE SUBMISSÃO
     const onFinish = async (values) => {
         setLoading(true);
         setError(null);
 
-        // Desestrutura todos os campos do formulário
-        const { email, password, cnpj, corporate_name, city } = values;
+        const {
+            email,
+            password,
+            documento,
+            nome,
+            nome_fantasia,
+            numero_telefone,
+            cep,
+            numero,
+            complemento, // Opcional
+            cidade,
+            estado,
+        } = values;
+
+        // CORREÇÃO CRÍTICA: Garante que complemento seja uma string vazia se estiver undefined/null
+        // para que o PostgREST o inclua na payload de 9 parâmetros.
+        const safeComplemento = complemento ?? '';
 
         try {
             // =======================================================
-            // PASSO 1: CRIAÇÃO SEGURA DO USUÁRIO (supabase.auth.signUp)
+            // PASSO 1: CRIAÇÃO DO USUÁRIO
             // =======================================================
             const { error: authError } = await supabase.auth.signUp({
                 email,
@@ -49,20 +72,31 @@ const SignUpPage = () => {
             });
 
             if (authError) {
-                // Trata erros de autenticação (ex: e-mail já registrado)
                 throw new Error(authError.message);
             }
 
-            // Se a criação do usuário for bem-sucedida, o JWT está ativo.
+            const { data: sessionData, error: sessionError } =
+                await supabase.auth.getSession();
+
+            if (sessionError || !sessionData.session) {
+                throw new Error(
+                    'Usuário criado, mas sessão não iniciada. Verifique as configurações de confirmação de e-mail.'
+                );
+            }
+
             // =======================================================
-            // PASSO 2: CRIAÇÃO DO TENANT VIA RPC (3 PARÂMETROS)
+            // PASSO 2: CRIAÇÃO DO TENANT VIA RPC (9 PARÂMETROS GARANTIDOS)
             // =======================================================
             const rpcPayload = {
-                // Os nomes DEVEM corresponder à assinatura da função no Postgres:
-                // sign_up_and_create_tenant(org_cnpj, org_corporate_name, org_city)
-                org_cnpj: cnpj,
-                org_corporate_name: corporate_name,
-                org_city: city,
+                org_documento: documento,
+                org_nome: nome,
+                org_nome_fantasia: nome_fantasia,
+                org_numero_telefone: numero_telefone,
+                org_cep: cep,
+                org_numero: numero,
+                org_complemento: safeComplemento, // AGORA GARANTIDO
+                org_cidade: cidade,
+                org_estado: estado,
             };
 
             const { data: orgId, error: rpcError } = await supabase.rpc(
@@ -71,36 +105,24 @@ const SignUpPage = () => {
             );
 
             if (rpcError) {
-                // Trata erros da RPC (ex: CNPJ duplicado, falha na transação)
-                // É CRUCIAL: Se a RPC falhar, o usuário criado no Passo 1 é órfão.
-                // Você pode adicionar uma chamada para deletar o usuário aqui se a transação falhar.
                 throw new Error(rpcError.message);
             }
 
             // =======================================================
-            // SUCESSO E REDIRECIONAMENTO
+            // SUCESSO
             // =======================================================
-            notificationApi.success({
-                message: 'Cadastro concluído!',
-                description:
-                    'Organização e conta criadas. Por favor, faça login.',
-                duration: 5,
-            });
+            await supabase.auth.signOut();
 
-            // Redireciona para a página de login
-            navigate('/auth/login', { replace: true });
-        } catch (err) {
-            console.error('Erro no cadastro:', err);
-            setError(
-                err.message ||
-                    'Ocorreu um erro no cadastro. Verifique os dados e tente novamente.'
+            showSuccess(
+                'Organização criada! Faça login com suas novas credenciais.'
             );
 
-            // Sugestão de notificação (além do erro no formulário)
-            notificationApi.error({
-                message: 'Falha no Cadastro',
-                description: err.message,
-            });
+            navigate('/auth/login', { replace: true });
+        } catch (err) {
+            showRpcError(
+                err.message ||
+                    'Ocorreu um erro desconhecido durante o cadastro.'
+            );
         } finally {
             setLoading(false);
         }
@@ -112,7 +134,7 @@ const SignUpPage = () => {
             align="middle"
             style={{ minHeight: '100vh', background: '#f0f2f5' }}
         >
-            <Col xs={24} sm={18} md={12} lg={10} xl={8}>
+            <Col xs={24} sm={20} md={16} lg={14} xl={12}>
                 <Card
                     title={
                         <Title level={3} style={{ textAlign: 'center' }}>
@@ -125,7 +147,6 @@ const SignUpPage = () => {
                         boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                     }}
                 >
-                    {/* Exibe mensagem de erro se houver */}
                     {error && (
                         <Alert
                             message="Erro de Cadastro"
@@ -141,67 +162,97 @@ const SignUpPage = () => {
                         name="signup_tenant"
                         layout="vertical"
                         onFinish={onFinish}
+                        requiredMark={false}
                     >
                         {/* =======================================================
-                            1. DADOS DO ADMINISTRADOR (Primeiro Usuário)
+                            1. DADOS DE ACESSO E CONTATO
                         ======================================================= */}
                         <Title level={5} style={{ marginTop: 0 }}>
-                            Dados do Administrador
+                            Acesso e Contato
                         </Title>
 
-                        <Form.Item
-                            name="email"
-                            rules={[
-                                {
-                                    required: true,
-                                    message:
-                                        'Por favor, insira um e-mail válido!',
-                                },
-                                { type: 'email', message: 'E-mail inválido!' },
-                            ]}
-                        >
-                            <Input
-                                prefix={<MailOutlined />}
-                                placeholder="E-mail (Será o seu login)"
-                                size="large"
-                            />
-                        </Form.Item>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="email"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'O e-mail é obrigatório!',
+                                        },
+                                        {
+                                            type: 'email',
+                                            message: 'E-mail inválido!',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        prefix={<MailOutlined />}
+                                        placeholder="E-mail (Seu Login)"
+                                        size="large"
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="password"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'A senha é obrigatória!',
+                                        },
+                                        {
+                                            min: 6,
+                                            message: 'Mínimo 6 caracteres.',
+                                        },
+                                    ]}
+                                >
+                                    <Input.Password
+                                        prefix={<LockOutlined />}
+                                        placeholder="Senha"
+                                        size="large"
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
 
-                        <Form.Item
-                            name="password"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Por favor, insira uma senha!',
-                                },
-                                {
-                                    min: 6,
-                                    message:
-                                        'A senha deve ter pelo menos 6 caracteres.',
-                                },
-                            ]}
-                        >
-                            <Input.Password
-                                prefix={<LockOutlined />}
-                                placeholder="Senha"
-                                size="large"
-                            />
-                        </Form.Item>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="numero_telefone"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                'O Telefone é obrigatório!',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        prefix={<PhoneOutlined />}
+                                        placeholder="Telefone (DDD + Número)"
+                                        size="large"
+                                        maxLength={11}
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}></Col>
+                        </Row>
 
                         {/* =======================================================
-                            2. DADOS DA ORGANIZAÇÃO (O Tenant)
+                            2. DADOS CADASTRAIS DA ORGANIZAÇÃO
                         ======================================================= */}
                         <Title level={5} style={{ marginTop: 24 }}>
-                            Dados da Organização
+                            Dados Cadastrais
                         </Title>
 
+                        {/* Razão Social (Nome Legal) - Fica sozinha na linha */}
                         <Form.Item
-                            name="corporate_name"
+                            name="nome"
                             rules={[
                                 {
                                     required: true,
-                                    message:
-                                        'Por favor, insira a Razão Social!',
+                                    message: 'A Razão Social é obrigatória!',
                                 },
                             ]}
                         >
@@ -212,44 +263,146 @@ const SignUpPage = () => {
                             />
                         </Form.Item>
 
-                        <Form.Item
-                            name="cnpj"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Por favor, insira o CNPJ!',
-                                },
-                                {
-                                    len: 14,
-                                    message: 'O CNPJ deve ter 14 dígitos.',
-                                },
-                            ]}
-                        >
-                            <Input
-                                prefix={<SolutionOutlined />}
-                                placeholder="CNPJ (Somente dígitos)"
-                                size="large"
-                                maxLength={14}
-                            />
-                            {/* Recomenda-se adicionar um componente de máscara aqui */}
-                        </Form.Item>
+                        {/* Nome Fantasia e Documento (Na mesma linha horizontal) */}
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="nome_fantasia"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                'O Nome Fantasia é obrigatório!',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        placeholder="Nome Fantasia"
+                                        size="large"
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    name="documento" // CNPJ/CPF
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                'O CNPJ/CPF é obrigatório!',
+                                        },
+                                        {
+                                            len: 14,
+                                            message: 'Deve ter 14 dígitos.',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        prefix={<SolutionOutlined />}
+                                        placeholder="Documento (CNPJ/CPF - 14 dígitos)"
+                                        size="large"
+                                        maxLength={14}
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
 
-                        <Form.Item
-                            name="city"
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Por favor, insira a Cidade!',
-                                },
-                            ]}
-                            tooltip="Campo obrigatório para a criação do Tenant (conforme a estrutura)"
-                        >
-                            <Input
-                                prefix={<HomeOutlined />}
-                                placeholder="Cidade Sede"
-                                size="large"
-                            />
-                        </Form.Item>
+                        {/* =======================================================
+                            3. ENDEREÇO 
+                        ======================================================= */}
+                        <Title level={5} style={{ marginTop: 24 }}>
+                            Endereço
+                        </Title>
+
+                        <Row gutter={16}>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="cep"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'O CEP é obrigatório!',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        prefix={<HomeOutlined />}
+                                        placeholder="CEP"
+                                        size="large"
+                                        maxLength={8}
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="numero"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'O Número é obrigatório!',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        placeholder="Número"
+                                        size="large"
+                                        maxLength={10}
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                                <Form.Item
+                                    name="complemento" // Opcional
+                                >
+                                    <Input
+                                        placeholder="Complemento (Opcional)"
+                                        size="large"
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Row gutter={16}>
+                            <Col span={18}>
+                                <Form.Item
+                                    name="cidade"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'A Cidade é obrigatória!',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        prefix={<EnvironmentOutlined />}
+                                        placeholder="Cidade"
+                                        size="large"
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col span={6}>
+                                <Form.Item
+                                    name="estado"
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                'O Estado (UF) é obrigatório!',
+                                        },
+                                        {
+                                            len: 2,
+                                            message: 'Deve ter 2 caracteres.',
+                                        },
+                                    ]}
+                                >
+                                    <Input
+                                        placeholder="UF (Ex: BA)"
+                                        size="large"
+                                        maxLength={2}
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
 
                         <Form.Item style={{ marginTop: 32 }}>
                             <Button
