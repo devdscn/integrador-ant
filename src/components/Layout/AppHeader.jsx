@@ -1,6 +1,3 @@
-// src/components/Layout/AppHeader.jsx (Ajuste de Alinhamento)
-
-import React from 'react';
 import {
     Layout,
     Dropdown,
@@ -9,8 +6,8 @@ import {
     Button,
     theme,
     Grid,
-    Spin,
     Typography,
+    Avatar,
 } from 'antd';
 import {
     UserOutlined,
@@ -23,19 +20,18 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../AuthProvider';
 import { useNavigate } from 'react-router-dom';
-import { useProfile } from '../../hooks/useProfile';
 
 const { Header } = Layout;
 const { useBreakpoint } = Grid;
 const { useToken } = theme;
+const { Text } = Typography;
 
 const AppHeader = ({ collapsed, toggleCollapsed }) => {
-    const { logout, currentTheme, toggleTheme } = useAuth();
+    const { logout, currentTheme, toggleTheme, user } = useAuth();
     const navigate = useNavigate();
     const screens = useBreakpoint();
     const { token } = useToken();
 
-    const { data: profile, isLoading: isProfileLoading } = useProfile();
     const isDark = currentTheme === 'dark';
 
     const handleLogout = async () => {
@@ -43,6 +39,48 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
         navigate('/login', { replace: true });
     };
 
+    const displayName = user?.user_metadata?.display_name;
+    const userRole = user?.app_metadata?.user_role || 'Convidado';
+
+    const userLabelContent = displayName
+        ? displayName
+        : user?.email || 'Usuário';
+
+    // 2. Componente de Rótulo Customizado
+    const UserLabel = () => (
+        // Removendo o style 'lineHeight: 1.2' do container para deixar o Space cuidar da centralização
+        <div style={{ textAlign: 'center' }}>
+            {/* Linha Principal: Display Name (Tamanho Aumentado) */}
+            <Text
+                style={{
+                    display: 'block',
+                    fontWeight: 'bold',
+                    color: token.colorText,
+                    fontSize: '1em',
+                    padding: 0,
+                    margin: 0,
+                }}
+            >
+                {userLabelContent}
+            </Text>
+            {/* Linha Secundária: Role do Usuário (Vibrante e Caixa Alta) */}
+            <Text
+                style={{
+                    display: 'block',
+                    fontSize: '0.70em',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    color: token.colorPrimary,
+                    padding: 0,
+                    margin: 0,
+                }}
+            >
+                {userRole}
+            </Text>
+        </div>
+    );
+
+    // 3. Itens do Menu de Dropdown
     const userMenuItems = [
         {
             key: 'profile',
@@ -50,64 +88,35 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
             label: 'Meu Perfil',
             onClick: () => navigate('/profile'),
         },
+        {
+            key: 'organization-settings',
+            icon: <SettingOutlined />,
+            label: 'Configurações da Organização',
+            onClick: () => navigate('/settings/organization'),
+        },
         { type: 'divider' },
         {
             key: 'logout',
             icon: <LogoutOutlined />,
             label: 'Sair',
-            danger: true,
             onClick: handleLogout,
         },
     ];
 
-    // Define o Label do Usuário
-    let userLabelContent;
-
-    if (isProfileLoading) {
-        userLabelContent = <Spin size="small" />;
-    } else if (profile) {
-        const displayName = profile.nome || profile.apelido;
-        const displayRole = profile.role ? profile.role.toUpperCase() : 'N/A';
-
-        // 1. ALTERAÇÃO PRINCIPAL: Alinha o texto à esquerda (flex-start)
-        userLabelContent = (
-            <div
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start', // Alinha as duas linhas de texto à esquerda
-                    lineHeight: 1.2,
-                }}
-            >
-                <Typography.Text strong style={{ fontSize: '14px' }}>
-                    {displayName}
-                </Typography.Text>
-                <Typography.Text
-                    type="secondary"
-                    style={{ fontSize: '11px', marginTop: -2 }}
-                >
-                    {displayRole}
-                </Typography.Text>
-            </div>
-        );
-    } else {
-        userLabelContent = 'Completar Perfil';
-    }
-
     return (
         <Header
             style={{
-                padding: '0 24px',
+                padding: 0,
+                background: token.colorBgContainer,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                height: 64,
-                backgroundColor: token.colorBgContainer,
-                borderBottom: `1px solid ${token.colorBorderSecondary}`,
+                paddingInline: 16,
             }}
         >
-            <Space size="large">
-                {(screens.xs || screens.sm || screens.md) && (
+            <Space>
+                {/* Botão de Colapso (Visível em telas maiores) */}
+                {!screens.xs && (
                     <Button
                         type="text"
                         icon={
@@ -139,10 +148,14 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
                 {/* Dropdown de Usuário */}
                 <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>
                     <a onClick={(e) => e.preventDefault()}>
-                        {/* 2. ALTERAÇÃO PRINCIPAL: Alinha verticalmente no centro */}
                         <Space size={8} align="center">
-                            <UserOutlined style={{ fontSize: '18px' }} />
-                            {userLabelContent}
+                            <Avatar
+                                style={{ backgroundColor: '#FF4627' }}
+                                size="default"
+                                icon={<UserOutlined />}
+                            />
+                            {/* <UserOutlined style={{ fontSize: '24px' }} /> */}
+                            <UserLabel />
                         </Space>
                     </a>
                 </Dropdown>
