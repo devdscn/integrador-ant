@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../components/AuthProvider';
+import { USERS_KEY } from './useUsers';
 
 // Nome da chave de cache
 const PROFILE_KEY = 'profile';
@@ -27,7 +28,6 @@ const fetchProfile = async (userId) => {
         if (data) return data;
     } catch (err) {
         // Se falhar, tentamos fallback abaixo
-        // eslint-disable-next-line no-console
         console.warn(
             'fetchProfile: query view failed, falling back to separate queries',
             err?.message
@@ -63,8 +63,6 @@ const fetchProfile = async (userId) => {
             profileOnly.email = userRow.email;
         }
     } catch (e) {
-        // não crítico
-        // eslint-disable-next-line no-console
         console.warn(
             'fetchProfile: failed to fetch email from users table',
             e?.message
@@ -73,19 +71,6 @@ const fetchProfile = async (userId) => {
 
     return profileOnly;
 };
-
-/*
-  Se preferir usar RPC em vez da view, crie uma função SQL (ex: public.get_profile_with_email(uid uuid))
-  e descomente o trecho abaixo e comente o bloco acima.
-  Exemplo de uso da RPC:
-
-const fetchProfile = async (userId) => {
-    if (!userId) return null;
-    const { data, error } = await supabase.rpc('get_profile_with_email', { uid: userId });
-    if (error) throw error;
-    return data;
-};
-*/
 
 export const useProfile = (userIdParam) => {
     const { user } = useAuth();
@@ -140,7 +125,7 @@ export const useUpdateProfile = () => {
                     queryKey: [PROFILE_KEY, targetId],
                 });
             }
-            queryClient.invalidateQueries({ queryKey: ['users'] });
+            queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
         },
     });
 };

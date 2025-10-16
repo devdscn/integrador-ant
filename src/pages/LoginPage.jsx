@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+// ADICIONADO: Link para navegação
 import { Form, Input, Button, Card, Typography, Row, Col, Space } from 'antd';
 import { UserOutlined, LockOutlined, LoadingOutlined } from '@ant-design/icons';
+// IMPORT ATUALIZADO: Inclui Link para navegação para a página de cadastro
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import { useNavigate } from 'react-router-dom';
 // Importação do hook customizado para exibir notificações
 import { useNotificationAPI } from '../components/NotificationProvider';
 
-const { Title } = Typography;
+const { Title, Text } = Typography; // DESESTRUTURANDO Text para usar no link
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -126,6 +128,22 @@ const LoginPage = () => {
                             </Button>
                         </Form.Item>
                     </Form>
+
+                    {/* NOVO: Link para a página de cadastro */}
+                    <div style={{ textAlign: 'center', marginTop: -10 }}>
+                        <Text>Não possui uma conta ou organização?</Text>
+                        <br />
+                        <Link to="/auth/signup">
+                            {/* O 'type="link"' do botão do Ant Design é uma boa opção de estilo para links */}
+                            <Button
+                                type="link"
+                                style={{ padding: 0, fontWeight: 'bold' }}
+                            >
+                                Cadastre sua organização aqui!
+                            </Button>
+                        </Link>
+                    </div>
+                    {/* FIM DO NOVO BLOCO */}
                 </Card>
             </Col>
         </Row>

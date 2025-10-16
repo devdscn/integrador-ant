@@ -1,12 +1,8 @@
-// src/components/Layout/AppSider.jsx
-
-import React from 'react';
-import { Layout, Menu, theme, Grid } from 'antd'; // Adicionado theme e Grid
+import { Layout, Menu, Grid } from 'antd'; // Adicionado theme e Grid
 import {
     DashboardOutlined,
     TeamOutlined, // Ícone para Usuários e o SubMenu Controle
     SettingOutlined, // Ícone para Meu Perfil
-    // ShoppingCartOutlined e MenuOutlined removidos, pois não estão mais em uso.
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom'; // Adicionado useLocation
 

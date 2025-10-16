@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase';
 
 // Nome da chave de cache
-const USERS_KEY = 'profiles';
+export const USERS_KEY = 'profiles';
 
 // =========================================================================
 // QUERY: Chamar a função get_admin_profiles()
