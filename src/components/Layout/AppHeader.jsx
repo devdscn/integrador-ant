@@ -17,6 +17,7 @@ import {
     MoonOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
+    MailOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../AuthProvider';
 import { useNavigate } from 'react-router-dom';
@@ -84,6 +85,12 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
     const userMenuItems = [
         {
             key: 'profile',
+            icon: <MailOutlined />,
+            label: user?.email,
+        },
+        { type: 'divider' },
+        {
+            key: 'profile',
             icon: <SettingOutlined />,
             label: 'Meu Perfil',
             onClick: () => navigate('/profile'),
@@ -149,13 +156,13 @@ const AppHeader = ({ collapsed, toggleCollapsed }) => {
                 <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>
                     <a onClick={(e) => e.preventDefault()}>
                         <Space size={8} align="center">
+                            <UserLabel />
                             <Avatar
                                 style={{ backgroundColor: '#FF4627' }}
                                 size="default"
                                 icon={<UserOutlined />}
                             />
                             {/* <UserOutlined style={{ fontSize: '24px' }} /> */}
-                            <UserLabel />
                         </Space>
                     </a>
                 </Dropdown>

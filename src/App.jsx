@@ -11,7 +11,10 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
-const SignUpPage = lazy(() => import('./pages/SignUpPage')); // NOVO: Import da página de cadastro
+const SignUpPage = lazy(() => import('./pages/SignUpPage'));
+const OrganizationSettingsPage = lazy(() =>
+    import('./pages/org/OrganizationSettingsPage')
+);
 
 // Componente simples para agrupar rotas que não usam o Layout principal
 const PublicRoutesWrapper = () => <Outlet />;
@@ -60,6 +63,10 @@ function App() {
                         <Route path="/" element={<DashboardPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/users" element={<UsersPage />} />
+                        <Route
+                            path="/settings/organization"
+                            element={<OrganizationSettingsPage />}
+                        />
                         {/* rota para editar outro usuário (admin) */}
                         <Route
                             path="/users/edit/:id"
